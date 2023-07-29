@@ -224,7 +224,8 @@ export default class TransmuxerInterface {
       accurateTimeOffset,
       trackSwitch,
       timeOffset,
-      initSegmentChange
+      initSegmentChange,
+      progressive
     );
     if (!contiguous || discontinuity || initSegmentChange) {
       logger.log(`[transmuxer-interface, ${frag.type}]: Starting new transmux session for sn: ${chunkMeta.sn} p: ${chunkMeta.part} level: ${chunkMeta.level} id: ${chunkMeta.id}
@@ -233,7 +234,8 @@ export default class TransmuxerInterface {
         contiguous: ${contiguous}
         accurateTimeOffset: ${accurateTimeOffset}
         timeOffset: ${timeOffset}
-        initSegmentChange: ${initSegmentChange}`);
+        initSegmentChange: ${initSegmentChange}
+        progressive: ${progressive}`);
       const config = new TransmuxConfig(
         audioCodec,
         videoCodec,

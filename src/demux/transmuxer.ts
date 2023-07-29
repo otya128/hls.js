@@ -103,6 +103,7 @@ export default class Transmuxer {
       accurateTimeOffset,
       timeOffset,
       initSegmentChange,
+      progressive,
     } = state || currentTransmuxState;
     const {
       audioCodec,
@@ -192,7 +193,8 @@ export default class Transmuxer {
       keyData,
       timeOffset,
       accurateTimeOffset,
-      chunkMeta
+      chunkMeta,
+      progressive
     );
     const currentState = this.currentTransmuxState;
 
@@ -262,7 +264,8 @@ export default class Transmuxer {
     chunkMeta: ChunkMetadata
   ) {
     const { audioTrack, videoTrack, id3Track, textTrack } = demuxResult;
-    const { accurateTimeOffset, timeOffset } = this.currentTransmuxState;
+    const { accurateTimeOffset, timeOffset, progressive } =
+      this.currentTransmuxState;
     logger.log(
       `[transmuxer.ts]: Flushed fragment ${chunkMeta.sn}${
         chunkMeta.part > -1 ? ' p: ' + chunkMeta.part : ''
@@ -276,7 +279,8 @@ export default class Transmuxer {
       timeOffset,
       accurateTimeOffset,
       true,
-      this.id
+      this.id,
+      progressive
     );
     transmuxResults.push({
       remuxResult,
@@ -345,7 +349,8 @@ export default class Transmuxer {
     keyData: KeyData | null,
     timeOffset: number,
     accurateTimeOffset: boolean,
-    chunkMeta: ChunkMetadata
+    chunkMeta: ChunkMetadata,
+    progressive: boolean
   ): TransmuxerResult | Promise<TransmuxerResult> {
     let result: TransmuxerResult | Promise<TransmuxerResult>;
     if (keyData && keyData.method === 'SAMPLE-AES') {
@@ -354,14 +359,16 @@ export default class Transmuxer {
         keyData,
         timeOffset,
         accurateTimeOffset,
-        chunkMeta
+        chunkMeta,
+        progressive
       );
     } else {
       result = this.transmuxUnencrypted(
         data,
         timeOffset,
         accurateTimeOffset,
-        chunkMeta
+        chunkMeta,
+        progressive
       );
     }
     return result;
@@ -371,7 +378,8 @@ export default class Transmuxer {
     data: Uint8Array,
     timeOffset: number,
     accurateTimeOffset: boolean,
-    chunkMeta: ChunkMetadata
+    chunkMeta: ChunkMetadata,
+    progressive: boolean
   ): TransmuxerResult {
     const { audioTrack, videoTrack, id3Track, textTrack } = (
       this.demuxer as Demuxer
@@ -384,7 +392,8 @@ export default class Transmuxer {
       timeOffset,
       accurateTimeOffset,
       false,
-      this.id
+      this.id,
+      progressive
     );
     return {
       remuxResult,
@@ -397,7 +406,8 @@ export default class Transmuxer {
     decryptData: KeyData,
     timeOffset: number,
     accurateTimeOffset: boolean,
-    chunkMeta: ChunkMetadata
+    chunkMeta: ChunkMetadata,
+    progressive: boolean
   ): Promise<TransmuxerResult> {
     return (this.demuxer as Demuxer)
       .demuxSampleAes(data, decryptData, timeOffset)
@@ -410,7 +420,8 @@ export default class Transmuxer {
           timeOffset,
           accurateTimeOffset,
           false,
-          this.id
+          this.id,
+          progressive
         );
         return {
           remuxResult,
@@ -516,6 +527,7 @@ export class TransmuxState {
   public trackSwitch: boolean;
   public timeOffset: number;
   public initSegmentChange: boolean;
+  public progressive: boolean;
 
   constructor(
     discontinuity: boolean,
@@ -523,7 +535,8 @@ export class TransmuxState {
     accurateTimeOffset: boolean,
     trackSwitch: boolean,
     timeOffset: number,
-    initSegmentChange: boolean
+    initSegmentChange: boolean,
+    progressive: boolean
   ) {
     this.discontinuity = discontinuity;
     this.contiguous = contiguous;
@@ -531,5 +544,6 @@ export class TransmuxState {
     this.trackSwitch = trackSwitch;
     this.timeOffset = timeOffset;
     this.initSegmentChange = initSegmentChange;
+    this.progressive = progressive;
   }
 }

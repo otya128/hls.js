@@ -124,7 +124,10 @@ class PassThroughRemuxer implements Remuxer {
     id3Track: DemuxedMetadataTrack,
     textTrack: DemuxedUserdataTrack,
     timeOffset: number,
-    accurateTimeOffset: boolean
+    accurateTimeOffset: boolean,
+    _flush: boolean,
+    _playlistType: never,
+    progressive: boolean
   ): RemuxerResult {
     let { initPTS, lastEndTime } = this;
     const result: RemuxerResult = {
@@ -172,7 +175,13 @@ class PassThroughRemuxer implements Remuxer {
     const startDTS = getStartDTS(initData, data);
     const decodeTime = startDTS === null ? timeOffset : startDTS;
     if (
-      isInvalidInitPts(initPTS, decodeTime, timeOffset, duration) ||
+      isInvalidInitPts(
+        initPTS,
+        decodeTime,
+        timeOffset,
+        duration,
+        progressive
+      ) ||
       (initSegment.timescale !== initPTS.timescale && accurateTimeOffset)
     ) {
       initSegment.initPTS = decodeTime - timeOffset;
@@ -251,10 +260,14 @@ function isInvalidInitPts(
   initPTS: RationalTimestamp | null,
   startDTS: number,
   timeOffset: number,
-  duration: number
+  duration: number,
+  progressive: boolean
 ): initPTS is null {
   if (initPTS === null) {
     return true;
+  }
+  if (progressive) {
+    return false;
   }
   // InitPTS is invalid when distance from program would be more than segment duration or a minimum of one second
   const minDuration = Math.max(duration, 1);
